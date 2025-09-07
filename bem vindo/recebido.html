@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Recebido</title>
+<style>
+body, html {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+}
+
+h1 { text-align: center; }
+
+.adicionar {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.adicionar input {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 14px;
+}
+
+.adicionar button {
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background: #28a745;
+  color: white;
+  transition: 0.3s;
+}
+
+.adicionar button:hover { background: #218838; }
+
+.pesquisa {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pesquisa input {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  width: 300px;
+  font-size: 14px;
+}
+
+.filtros {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+button.filtro {
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background: #007bff;
+  color: white;
+  transition: 0.3s;
+}
+
+button.filtro:hover { background: #0056b3; }
+
+.caixa-recebido {
+  border: 1px solid white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(255,255,255,0.05);
+}
+
+.caixa-recebido div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+button.editar, button.deletar, button.confirmar {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button.editar { background: #ffc107; color: black; }
+button.editar:hover { background: #e0a800; }
+
+button.confirmar { background: #00bfff; color: white; }
+button.confirmar:hover { background: #0099cc; }
+
+button.deletar { background: #dc3545; color: white; }
+button.deletar:hover { background: #a71d2a; }
+</style>
+</head>
+<body>
+<h1>Recebido</h1>
+
+<div class="adicionar">
+  <input type="text" id="novoNome" placeholder="Nome do cliente/bar">
+  <input type="number" id="novoValor" placeholder="Valor recebido" min="0" step="0.01">
+  <button onclick="adicionarRecebido()">Adicionar</button>
+</div>
+
+<div class="pesquisa">
+  <input type="text" id="searchBar" placeholder="Pesquisar cliente/bar...">
+</div>
+
+<div class="filtros">
+  <button class="filtro" onclick="filtrarRecebido('7dias')">Últimos 7 dias</button>
+  <button class="filtro" onclick="filtrarRecebido('mes')">Este mês</button>
+  <button class="filtro" onclick="filtrarRecebido('ano')">Este ano</button>
+  <button class="filtro" onclick="filtrarRecebido('todos')">Todos</button>
+</div>
+
+<div id="recebidoContainer"></div>
+
+<script>
+let recebido = JSON.parse(localStorage.getItem('recebido')) || [];
+
+// Salva no localStorage
+function salvarRecebido(){ localStorage.setItem('recebido', JSON.stringify(recebido)); }
+
+// Atualiza lista
+function atualizarRecebido(listaFiltrada){
+  const container = document.getElementById('recebidoContainer');
+  container.innerHTML = '';
+  listaFiltrada.forEach((item, index)=>{
+    const caixa = document.createElement('div');
+    caixa.className = 'caixa-recebido';
+    caixa.innerHTML = `
+      <div>
+        <input type="text" id="nome${index}" value="${item.nome}" disabled>
+        <input type="number" id="valor${index}" value="${item.total.toFixed(2)}" disabled>
+        <span>Data: ${new Date(item.data).toLocaleString()}</span>
+      </div>
+      <div>
+        <button class="editar" onclick="habilitarEdicao(${index})">Editar</button>
+        <button class="confirmar" id="confirmar${index}" style="display:none;" onclick="confirmarEdicao(${index})">Confirmar</button>
+        <button class="deletar" onclick="deletarRecebido(${index})">Deletar</button>
+      </div>
+    `;
+    container.appendChild(caixa);
+  });
+}
+
+// Adiciona registro
+function adicionarRecebido(){
+  const nome = document.getElementById('novoNome').value.trim();
+  const total = parseFloat(document.getElementById('novoValor').value);
+  if(nome === '' || isNaN(total)){
+    alert("Preencha todos os campos corretamente!");
+    return;
+  }
+  const dataHora = new Date().toISOString(); // salva como ISO
+  recebido.push({nome, total, data: dataHora});
+  salvarRecebido();
+  atualizarRecebido(recebido);
+  document.getElementById('novoNome').value = '';
+  document.getElementById('novoValor').value = '';
+}
+
+// Habilita edição
+function habilitarEdicao(i){
+  document.getElementById(`nome${i}`).disabled = false;
+  document.getElementById(`valor${i}`).disabled = false;
+  document.getElementById(`confirmar${i}`).style.display = 'inline-block';
+}
+
+// Confirma edição
+function confirmarEdicao(i){
+  if(confirm("Tem certeza que deseja salvar esta alteração?")){
+    recebido[i].nome = document.getElementById(`nome${i}`).value;
+    recebido[i].total = parseFloat(document.getElementById(`valor${i}`).value);
+    recebido[i].data = new Date().toISOString(); // atualiza data
+    salvarRecebido();
+    document.getElementById(`nome${i}`).disabled = true;
+    document.getElementById(`valor${i}`).disabled = true;
+    document.getElementById(`confirmar${i}`).style.display = 'none';
+    atualizarRecebido(recebido);
+  }
+}
+
+// Deleta registro
+function deletarRecebido(i){
+  if(confirm("Tem certeza que deseja deletar este registro?")){
+    recebido.splice(i,1);
+    salvarRecebido();
+    atualizarRecebido(recebido);
+  }
+}
+
+// Pesquisa
+document.getElementById('searchBar').addEventListener('input', function(){
+  const termo = this.value.toLowerCase();
+  const filtrados = recebido.filter(r => r.nome.toLowerCase().includes(termo));
+  atualizarRecebido(filtrados);
+});
+
+// Filtros de data
+function filtrarRecebido(tipo){
+  const agora = new Date();
+  let filtrados = [];
+  if(tipo === '7dias'){
+    filtrados = recebido.filter(r => new Date(r.data) >= new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()-7));
+  } else if(tipo === 'mes'){
+    filtrados = recebido.filter(r => {
+      const d = new Date(r.data);
+      return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear();
+    });
+  } else if(tipo === 'ano'){
+    filtrados = recebido.filter(r => new Date(r.data).getFullYear() === agora.getFullYear());
+  } else {
+    filtrados = recebido;
+  }
+  atualizarRecebido(filtrados);
+}
+
+// Atualiza automaticamente caso haja alteração em outra aba
+function atualizarAutomatico(){
+  recebido = JSON.parse(localStorage.getItem('recebido')) || [];
+  atualizarRecebido(recebido);
+}
+setInterval(atualizarAutomatico, 1000);
+
+// Inicializa
+atualizarRecebido(recebido);
+</script>
+</body>
+</html>

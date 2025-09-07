@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Todos os Orçamentos</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .filtros {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filtros input, .filtros button {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 14px;
+    }
+
+    .filtros input {
+      width: 200px;
+    }
+
+    .filtros button {
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      transition: 0.3s;
+    }
+
+    .filtros button:hover {
+      background: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid white;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #007bff;
+    }
+
+    .status {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      display: inline-block;
+    }
+
+    .em-aberto { background: white; color: black; }
+    .feito { background: #28a745; color: white; }
+    .nao-feito { background: #dc3545; color: white; }
+
+    button.acao {
+      margin: 2px;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button.alterar-status { background: #ffc107; color: black; }
+    button.alterar-status:hover { background: #e0a800; }
+
+    button.editar { background: #17a2b8; color: white; }
+    button.editar:hover { background: #117a8b; }
+
+    button.deletar { background: #dc3545; color: white; }
+    button.deletar:hover { background: #a71d2a; }
+
+    input.edicao {
+      width: 80px;
+      text-align: center;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Todos os Orçamentos</h1>
+
+  <div class="filtros">
+    <input type="text" id="searchBar" placeholder="Pesquisar pelo nome do cliente/bar...">
+    <button onclick="filtrarEmAberto()">Em Aberto</button>
+    <button onclick="mostrarTodos()">Mostrar Todos</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data/Hora</th>
+        <th>Nome</th>
+        <th>Lona</th>
+        <th>Estrutura</th>
+        <th>Arte</th>
+        <th>Transporte</th>
+        <th>Instalação</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaOrcamentos"></tbody>
+  </table>
+
+  <script>
+    let lista = JSON.parse(localStorage.getItem('orcamentos')) || [];
+    lista.sort((a,b) => new Date(b.data) - new Date(a.data));
+    const tbody = document.getElementById('tabelaOrcamentos');
+
+    function atualizarTabela(listaFiltrada) {
+      tbody.innerHTML = '';
+      listaFiltrada.forEach((orc, index) => {
+        let classeStatus = '', textoStatus = '';
+        if (orc.status === 'em-aberto') { classeStatus='em-aberto'; textoStatus='Em Aberto'; }
+        else if (orc.status === 'feito') { classeStatus='feito'; textoStatus='Feito'; }
+        else { classeStatus='nao-feito'; textoStatus='Não Feito'; }
+
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${new Date(orc.data).toLocaleString('pt-BR')}</td>
+          <td><input class="edicao" id="nome${index}" value="${orc.nome}"></td>
+          <td><input class="edicao" id="lona${index}" value="${orc.lona}"></td>
+          <td><input class="edicao" id="estrutura${index}" value="${orc.estrutura}"></td>
+          <td><input class="edicao" id="arte${index}" value="${orc.arte}"></td>
+          <td><input class="edicao" id="transporte${index}" value="${orc.transporte}"></td>
+          <td><input class="edicao" id="instalacao${index}" value="${orc.instalacao}"></td>
+          <td><input class="edicao" id="total${index}" value="${orc.total}"></td>
+          <td>
+            <span class="status ${classeStatus}">${textoStatus}</span>
+            <br>
+            <button class="acao alterar-status" onclick="confirmAlterarStatus(${index})">Alterar Status</button>
+          </td>
+          <td>
+            <button class="acao editar" onclick="confirmEditar(${index})">Editar</button>
+            <button class="acao deletar" onclick="confirmDeletar(${index})">Deletar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Funções de confirmação
+    function confirmAlterarStatus(i){
+      if(confirm("Tem certeza que deseja alterar o status?")){
+        toggleStatus(i);
+      }
+    }
+
+    function confirmEditar(i){
+      if(confirm("Tem certeza que deseja salvar as alterações?")){
+        editarOrcamento(i);
+      }
+    }
+
+    function confirmDeletar(i){
+      if(confirm("Tem certeza que deseja deletar este orçamento?")){
+        deletarOrcamento(i);
+      }
+    }
+
+    // Funções principais
+    function toggleStatus(i) {
+      const atual = lista[i].status || 'em-aberto';
+      if (atual === 'em-aberto') lista[i].status = 'feito';
+      else if (atual === 'feito') lista[i].status = 'nao-feito';
+      else lista[i].status = 'em-aberto';
+
+      localStorage.setItem('orcamentos', JSON.stringify(lista));
+      atualizarTabela(lista);
+    }
+
+    function editarOrcamento(i){
+      lista[i].nome = document.getElementById(`nome${i}`).value;
+      lista[i].lona = document.getElementById(`lona${i}`).value;
+      lista[i].estrutura = document.getElementById(`estrutura${i}`).value;
+      lista[i].arte = document.getElementById(`arte${i}`).value;
+      lista[i].transporte = document.getElementById(`transporte${i}`).value;
+      lista[i].instalacao = document.getElementById(`instalacao${i}`).value;
+      lista[i].total = document.getElementById(`total${i}`).value;
+      localStorage.setItem('orcamentos', JSON.stringify(lista));
+      atualizarTabela(lista);
+    }
+
+    function deletarOrcamento(i){
+      lista.splice(i,1);
+      localStorage.setItem('orcamentos', JSON.stringify(lista));
+      atualizarTabela(lista);
+    }
+
+    function filtrarEmAberto() {
+      const filtrados = lista.filter(orc => orc.status === 'em-aberto');
+      atualizarTabela(filtrados);
+    }
+
+    function mostrarTodos() {
+      atualizarTabela(lista);
+    }
+
+    document.getElementById('searchBar').addEventListener('input', function() {
+      const termo = this.value.toLowerCase();
+      const filtrados = lista.filter(orc => orc.nome.toLowerCase().includes(termo));
+      atualizarTabela(filtrados);
+    });
+
+    atualizarTabela(lista);
+  </script>
+</body>
+</html>

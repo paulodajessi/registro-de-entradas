@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Entrada de Produtos</title>
+<style>
+body, html {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #0a0a0a;
+  color: white;
+}
+h1 { text-align: center; }
+
+.adicionar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adicionar input {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  width: 200px;
+  font-size: 14px;
+}
+
+.adicionar button {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background: #28a745;
+  color: white;
+  transition: 0.3s;
+}
+
+.adicionar button:hover { background: #218838; }
+
+.pesquisa {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pesquisa input {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  width: 250px;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.caixa-produto {
+  border: 1px solid white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(255,255,255,0.05);
+}
+
+.caixa-produto div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.caixa-produto input {
+  width: 100px;
+  padding: 5px;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+button.editar, button.confirmar, button.deletar {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button.editar { background: #ffc107; color: black; }
+button.editar:hover { background: #e0a800; }
+
+button.confirmar { background: #00bfff; color: white; }
+button.confirmar:hover { background: #0099cc; }
+
+button.deletar { background: #dc3545; color: white; }
+button.deletar:hover { background: #a71d2a; }
+</style>
+</head>
+<body>
+<h1>Entrada de Produtos</h1>
+
+<div class="adicionar">
+  <input type="text" id="novoNome" placeholder="Nome do produto">
+  <input type="number" id="novaQuantidade" placeholder="Quantidade" min="0">
+  <input type="number" id="novoPreco" placeholder="Preço unitário" min="0" step="0.01">
+  <button onclick="adicionarProduto()">Adicionar Produto</button>
+</div>
+
+<div class="pesquisa">
+  <input type="text" id="searchBar" placeholder="Pesquisar produto...">
+</div>
+
+<div id="produtosContainer"></div>
+
+<script>
+// Produtos e saída
+let produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+let saida = JSON.parse(localStorage.getItem('saida')) || [];
+
+// Funções para salvar
+function salvarLocal() { localStorage.setItem('produtos', JSON.stringify(produtos)); }
+function salvarSaida() { localStorage.setItem('saida', JSON.stringify(saida)); }
+
+// Atualiza lista de produtos
+function atualizarLista(listaFiltrada) {
+  const container = document.getElementById('produtosContainer');
+  container.innerHTML = '';
+  listaFiltrada.forEach((prod, index) => {
+    const caixa = document.createElement('div');
+    caixa.className = 'caixa-produto';
+    caixa.innerHTML = `
+      <div>
+        <input type="text" id="nome${index}" value="${prod.nome}" disabled>
+        <input type="number" id="quantidade${index}" value="${prod.quantidade}" min="0" disabled>
+        <input type="number" id="preco${index}" value="${prod.preco}" min="0" step="0.01" disabled>
+      </div>
+      <div>
+        <button class="editar" onclick="habilitarEdicao(${index})">Editar</button>
+        <button class="confirmar" id="confirmar${index}" style="display:none;" onclick="confirmarEdicao(${index})">Confirmar</button>
+        <button class="deletar" onclick="deletarProduto(${index})">Deletar</button>
+      </div>
+    `;
+    container.appendChild(caixa);
+  });
+}
+
+// Adicionar produto
+function adicionarProduto(){
+  const nome = document.getElementById('novoNome').value.trim();
+  const quantidade = parseFloat(document.getElementById('novaQuantidade').value);
+  const preco = parseFloat(document.getElementById('novoPreco').value);
+
+  if(nome === '' || isNaN(quantidade) || isNaN(preco)){
+    alert("Preencha todos os campos corretamente!");
+    return;
+  }
+
+  produtos.push({nome, quantidade, preco});
+  salvarLocal();
+  atualizarLista(produtos);
+
+  document.getElementById('novoNome').value = '';
+  document.getElementById('novaQuantidade').value = '';
+  document.getElementById('novoPreco').value = '';
+}
+
+// Habilita edição
+function habilitarEdicao(i){
+  document.getElementById(`nome${i}`).disabled = false;
+  document.getElementById(`quantidade${i}`).disabled = false;
+  document.getElementById(`preco${i}`).disabled = false;
+  document.getElementById(`confirmar${i}`).style.display = 'inline-block';
+}
+
+// Confirma edição
+function confirmarEdicao(i){
+  if(confirm("Tem certeza que deseja salvar esta alteração?")){
+    const novaQtd = parseFloat(document.getElementById(`quantidade${i}`).value);
+    const qtdAnterior = produtos[i].quantidade;
+
+    // Se diminuir a quantidade, registra saída automaticamente
+    if(novaQtd < qtdAnterior){
+      const retirada = qtdAnterior - novaQtd;
+      const dataHora = new Date().toISOString(); // salva formato ISO para facilitar relatórios
+      saida.push({nome: produtos[i].nome, quantidade: retirada, data: dataHora});
+      salvarSaida();
+    }
+
+    produtos[i].nome = document.getElementById(`nome${i}`).value;
+    produtos[i].quantidade = novaQtd;
+    produtos[i].preco = parseFloat(document.getElementById(`preco${i}`).value);
+    salvarLocal();
+
+    document.getElementById(`nome${i}`).disabled = true;
+    document.getElementById(`quantidade${i}`).disabled = true;
+    document.getElementById(`preco${i}`).disabled = true;
+    document.getElementById(`confirmar${i}`).style.display = 'none';
+    atualizarLista(produtos);
+  }
+}
+
+// Deleta produto
+function deletarProduto(i){
+  if(confirm("Tem certeza que deseja deletar este produto?")){
+    produtos.splice(i,1);
+    salvarLocal();
+    atualizarLista(produtos);
+  }
+}
+
+// Pesquisa
+document.getElementById('searchBar').addEventListener('input', function(){
+  const termo = this.value.toLowerCase();
+  const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+  atualizarLista(filtrados);
+});
+
+// Inicializa
+atualizarLista(produtos);
+</script>
+</body>
+</html>

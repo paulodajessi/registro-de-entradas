@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatórios</title>
+<style>
+body, html {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+}
+h1 { text-align: center; margin-bottom: 20px; }
+
+.selecao {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.selecao select {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 14px;
+}
+
+.relatorio {
+  max-width: 700px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.relatorio h2 { text-align: center; margin-bottom: 15px; }
+.relatorio p { font-size: 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Relatório Financeiro</h1>
+
+<div class="selecao">
+  <select id="periodoSelect" onchange="gerarRelatorio()">
+    <option value="semana">Últimos 7 dias</option>
+    <option value="mes">Mês</option>
+    <option value="ano">Ano</option>
+  </select>
+
+  <select id="mesSelect" onchange="gerarRelatorio()" style="display:none;">
+    <option value="0">Janeiro</option>
+    <option value="1">Fevereiro</option>
+    <option value="2">Março</option>
+    <option value="3">Abril</option>
+    <option value="4">Maio</option>
+    <option value="5">Junho</option>
+    <option value="6">Julho</option>
+    <option value="7">Agosto</option>
+    <option value="8">Setembro</option>
+    <option value="9">Outubro</option>
+    <option value="10">Novembro</option>
+    <option value="11">Dezembro</option>
+  </select>
+</div>
+
+<div class="relatorio" id="relatorioContainer">
+  <h2>Resumo</h2>
+  <p>Total Gasto: R$ <span id="totalGasto">0.00</span></p>
+  <p>Total Recebido: R$ <span id="totalRecebido">0.00</span></p>
+  <p>Saldo: R$ <span id="saldo">0.00</span></p>
+</div>
+
+<script>
+// Dados
+let produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+let saida = JSON.parse(localStorage.getItem('saida')) || [];
+let recebido = JSON.parse(localStorage.getItem('recebido')) || [];
+
+// Converte string de data para Date corretamente
+function parseData(str){
+  // Se já estiver em ISO (yyyy-mm-ddTHH:mm:ss), só cria new Date
+  let d = new Date(str);
+  if(!isNaN(d)) return d;
+
+  // Se for formato brasileiro dd/mm/yyyy hh:mm:ss
+  const partes = str.split(' ');
+  const dataPart = partes[0].split('/');
+  const horaPart = partes[1] ? partes[1].split(':') : [0,0,0];
+  return new Date(
+    parseInt(dataPart[2]), // ano
+    parseInt(dataPart[1])-1, // mês
+    parseInt(dataPart[0]), // dia
+    parseInt(horaPart[0]),
+    parseInt(horaPart[1]),
+    parseInt(horaPart[2] || 0)
+  );
+}
+
+// Calcula gasto por período
+function calcularGasto(periodo, mes){
+  let total = 0;
+  const agora = new Date();
+  saida.forEach(s => {
+    const data = parseData(s.data);
+    const produto = produtos.find(p => p.nome === s.nome);
+    if(!produto) return;
+
+    if(periodo === 'semana'){
+      const diffDias = Math.floor((agora - data)/(1000*60*60*24));
+      if(diffDias < 7) total += s.quantidade * produto.preco;
+    }
+    if(periodo === 'mes'){
+      if(data.getMonth() == mes && data.getFullYear() == agora.getFullYear()) total += s.quantidade * produto.preco;
+    }
+    if(periodo === 'ano'){
+      if(data.getFullYear() == agora.getFullYear()) total += s.quantidade * produto.preco;
+    }
+  });
+  return total;
+}
+
+// Calcula recebido por período
+function calcularRecebido(periodo, mes){
+  let total = 0;
+  const agora = new Date();
+  recebido.forEach(r => {
+    const data = parseData(r.data);
+    if(periodo === 'semana'){
+      const diffDias = Math.floor((agora - data)/(1000*60*60*24));
+      if(diffDias < 7) total += r.total;
+    }
+    if(periodo === 'mes'){
+      if(data.getMonth() == mes && data.getFullYear() == agora.getFullYear()) total += r.total;
+    }
+    if(periodo === 'ano'){
+      if(data.getFullYear() == agora.getFullYear()) total += r.total;
+    }
+  });
+  return total;
+}
+
+// Gera relatório
+function gerarRelatorio(){
+  const periodo = document.getElementById('periodoSelect').value;
+  const mesSelect = document.getElementById('mesSelect');
+  let mes = mesSelect.value;
+
+  // Mostrar select de mês apenas se for "mes"
+  mesSelect.style.display = (periodo === 'mes') ? 'inline-block' : 'none';
+
+  const gasto = calcularGasto(periodo, mes);
+  const recebidoTotal = calcularRecebido(periodo, mes);
+
+  document.getElementById('totalGasto').innerText = gasto.toFixed(2);
+  document.getElementById('totalRecebido').innerText = recebidoTotal.toFixed(2);
+  document.getElementById('saldo').innerText = (recebidoTotal - gasto).toFixed(2);
+}
+
+// Inicializa
+gerarRelatorio();
+</script>
+
+</body>
+</html>

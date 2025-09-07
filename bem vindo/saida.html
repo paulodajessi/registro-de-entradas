@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Saída de Produtos</title>
+<style>
+body, html {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #000;
+  color: white;
+}
+
+h1 { text-align: center; }
+
+.pesquisa {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pesquisa input {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  width: 300px;
+  font-size: 14px;
+}
+
+.caixa-saida {
+  border: 1px solid white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(255,255,255,0.05);
+}
+
+button.deletar {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #dc3545;
+  color: white;
+  transition: 0.3s;
+}
+
+button.deletar:hover { background: #a71d2a; }
+</style>
+</head>
+<body>
+<h1>Saída de Produtos</h1>
+
+<div class="pesquisa">
+  <input type="text" id="searchBar" placeholder="Pesquisar saída...">
+</div>
+
+<div id="saidaContainer"></div>
+
+<script>
+// Puxa a saída do localStorage
+let saida = JSON.parse(localStorage.getItem('saida')) || [];
+
+function salvarSaida() { localStorage.setItem('saida', JSON.stringify(saida)); }
+
+function atualizarSaida(listaFiltrada){
+  const container = document.getElementById('saidaContainer');
+  container.innerHTML = '';
+
+  listaFiltrada.forEach((item, index) => {
+    const caixa = document.createElement('div');
+    caixa.className = 'caixa-saida';
+    caixa.innerHTML = `
+      <div>
+        <strong>${item.nome}</strong> - Qtd: ${item.quantidade} - Data: ${item.data}
+      </div>
+      <div>
+        <button class="deletar" onclick="deletarSaida(${index})">Deletar</button>
+      </div>
+    `;
+    container.appendChild(caixa);
+  });
+}
+
+// Deleta saída
+function deletarSaida(i){
+  if(confirm("Tem certeza que deseja deletar este registro de saída?")){
+    saida.splice(i,1);
+    salvarSaida();
+    atualizarSaida(saida);
+  }
+}
+
+// Pesquisa saída
+document.getElementById('searchBar').addEventListener('input', function(){
+  const termo = this.value.toLowerCase();
+  const filtrados = saida.filter(s => s.nome.toLowerCase().includes(termo));
+  atualizarSaida(filtrados);
+});
+
+// Atualiza automaticamente a saída do localStorage
+function atualizarAutomatico(){
+  saida = JSON.parse(localStorage.getItem('saida')) || [];
+  atualizarSaida(saida);
+}
+
+// Atualiza a cada 1s para pegar alterações da entrada
+setInterval(atualizarAutomatico, 1000);
+
+// Inicializa
+atualizarSaida(saida);
+</script>
+</body>
+</html>

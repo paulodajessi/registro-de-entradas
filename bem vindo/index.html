@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Entrar</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: #0a0a0a;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+      text-align: center;
+      box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.3);
+    }
+
+    .login-box input {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 200px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .login-box button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background: #00bfff;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .login-box button:hover {
+      background: #0099cc;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>Entrar</h1>
+    <form id="loginForm">
+      <label for="usuario">Usuário</label>
+      <input type="text" id="usuario" name="usuario" required>
+
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required>
+
+      <button type="submit">Entrar</button>
+      <p id="errorMsg" class="error"></p>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      let usuario = document.getElementById("usuario").value;
+      let senha = document.getElementById("senha").value;
+
+      if (usuario === "admin" && senha === "210821") {
+        window.location.href = "bemvindo.html";
+      } else {
+        document.getElementById("errorMsg").innerText = "Usuário ou senha incorretos!";
+      }
+    });
+  </script>
+</body>
+</html>

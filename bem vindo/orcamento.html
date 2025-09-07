@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Orçamentos</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    form {
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      width: 400px;
+    }
+
+    form label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    form input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    form button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+
+    form button:hover {
+      background: #0056b3;
+    }
+
+    .ver-todos {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #ffc107;
+      color: black;
+      text-decoration: none;
+      border-radius: 8px;
+    }
+
+    .ver-todos:hover {
+      background: #e0a800;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Registrar Orçamento</h1>
+
+  <form id="orcamentoForm">
+    <label>Nome do Cliente/Bar</label>
+    <input type="text" id="nome" required>
+
+    <label>Impressão da Lona</label>
+    <input type="number" id="lona" value="0" min="0" required>
+
+    <label>Estrutura Metálica</label>
+    <input type="number" id="estrutura" value="0" min="0" required>
+
+    <label>Criação da Arte</label>
+    <input type="number" id="arte" value="0" min="0" required>
+
+    <label>Transporte</label>
+    <input type="number" id="transporte" value="0" min="0" required>
+
+    <label>Instalação</label>
+    <input type="number" id="instalacao" value="0" min="0" required>
+
+    <label>Total</label>
+    <input type="number" id="total" value="0" readonly>
+
+    <button type="submit">Adicionar Orçamento</button>
+  </form>
+
+  <a href="todos_orcamentos.html" class="ver-todos">Ver Todos os Orçamentos</a>
+
+  <script>
+    const form = document.getElementById('orcamentoForm');
+
+    // Função para atualizar o total automaticamente
+    function atualizarTotal() {
+      const lona = parseFloat(document.getElementById('lona').value) || 0;
+      const estrutura = parseFloat(document.getElementById('estrutura').value) || 0;
+      const arte = parseFloat(document.getElementById('arte').value) || 0;
+      const transporte = parseFloat(document.getElementById('transporte').value) || 0;
+      const instalacao = parseFloat(document.getElementById('instalacao').value) || 0;
+
+      const total = lona + estrutura + arte + transporte + instalacao;
+      document.getElementById('total').value = total.toFixed(2);
+    }
+
+    // Adiciona listeners para atualizar o total sempre que um campo mudar
+    ['lona','estrutura','arte','transporte','instalacao'].forEach(id => {
+      document.getElementById(id).addEventListener('input', atualizarTotal);
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const orcamento = {
+        nome: document.getElementById('nome').value,
+        lona: parseFloat(document.getElementById('lona').value),
+        estrutura: parseFloat(document.getElementById('estrutura').value),
+        arte: parseFloat(document.getElementById('arte').value),
+        transporte: parseFloat(document.getElementById('transporte').value),
+        instalacao: parseFloat(document.getElementById('instalacao').value),
+        total: parseFloat(document.getElementById('total').value),
+        feito: false,
+        data: new Date().toISOString()
+      };
+
+      let lista = JSON.parse(localStorage.getItem('orcamentos')) || [];
+      lista.push(orcamento);
+      localStorage.setItem('orcamentos', JSON.stringify(lista));
+
+      form.reset();
+      atualizarTotal(); // reseta o total também
+      alert("Orçamento salvo com sucesso!");
+    });
+  </script>
+</body>
+</html>
